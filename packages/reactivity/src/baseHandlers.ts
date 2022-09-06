@@ -84,7 +84,7 @@ function createArrayInstrumentations() {
   })
   return instrumentations
 }
-
+// 通过闭包返回一个get 函数，处理响应对象上的 get 操作
 function createGetter(isReadonly = false, shallow = false) {
   return function get(target: Target, key: string | symbol, receiver: object) {
     if (key === ReactiveFlags.IS_REACTIVE) {
@@ -113,14 +113,14 @@ function createGetter(isReadonly = false, shallow = false) {
     if (!isReadonly && targetIsArray && hasOwn(arrayInstrumentations, key)) {
       return Reflect.get(arrayInstrumentations, key, receiver)
     }
-
+    // 取到 get 操作的结果
     const res = Reflect.get(target, key, receiver)
 
     if (isSymbol(key) ? builtInSymbols.has(key) : isNonTrackableKeys(key)) {
       return res
     }
-
     if (!isReadonly) {
+      // 不是只读触发采集依赖的操作
       track(target, TrackOpTypes.GET, key)
     }
 
@@ -146,7 +146,7 @@ function createGetter(isReadonly = false, shallow = false) {
 
 const set = /*#__PURE__*/ createSetter()
 const shallowSet = /*#__PURE__*/ createSetter(true)
-
+// 通过闭包返回一个 set 函数，处理响应对象上的 set 操作
 function createSetter(shallow = false) {
   return function set(
     target: object,
@@ -171,6 +171,7 @@ function createSetter(shallow = false) {
       // in shallow mode, objects are set as-is regardless of reactive or not
     }
 
+    // 判断是否已存在当前操作的 key
     const hadKey =
       isArray(target) && isIntegerKey(key)
         ? Number(key) < target.length
@@ -178,6 +179,8 @@ function createSetter(shallow = false) {
     const result = Reflect.set(target, key, value, receiver)
     // don't trigger if target is something up in the prototype chain of original
     if (target === toRaw(receiver)) {
+      // 触发当前响应对象这个key的依赖，根据key判断为新增或者修改
+      // 触发依赖
       if (!hadKey) {
         trigger(target, TriggerOpTypes.ADD, key, value)
       } else if (hasChanged(value, oldValue)) {
@@ -188,16 +191,18 @@ function createSetter(shallow = false) {
   }
 }
 
+// 当响应对象的 key 被删除时 触发
 function deleteProperty(target: object, key: string | symbol): boolean {
   const hadKey = hasOwn(target, key)
   const oldValue = (target as any)[key]
   const result = Reflect.deleteProperty(target, key)
   if (result && hadKey) {
+    // 触发依赖响应
     trigger(target, TriggerOpTypes.DELETE, key, undefined, oldValue)
   }
   return result
 }
-
+// object haswon 操作的时候也需要采集依赖
 function has(target: object, key: string | symbol): boolean {
   const result = Reflect.has(target, key)
   if (!isSymbol(key) || !builtInSymbols.has(key)) {
@@ -205,7 +210,7 @@ function has(target: object, key: string | symbol): boolean {
   }
   return result
 }
-
+// object keys 操作的时候也需要采集依赖
 function ownKeys(target: object): (string | symbol)[] {
   track(target, TrackOpTypes.ITERATE, isArray(target) ? 'length' : ITERATE_KEY)
   return Reflect.ownKeys(target)

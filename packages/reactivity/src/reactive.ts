@@ -162,7 +162,7 @@ export function readonly<T extends object>(
   )
 }
 
-/**
+/** 
  * Returns a reactive-copy of the original object, where only the root level
  * properties are readonly, and does NOT unwrap refs nor recursively convert
  * returned properties.
@@ -177,13 +177,13 @@ export function shallowReadonly<T extends object>(target: T): Readonly<T> {
     shallowReadonlyMap
   )
 }
-
+// 创建响应式的对象
 function createReactiveObject(
-  target: Target,
+  target: Target, // 原生对象
   isReadonly: boolean,
-  baseHandlers: ProxyHandler<any>,
-  collectionHandlers: ProxyHandler<any>,
-  proxyMap: WeakMap<Target, any>
+  baseHandlers: ProxyHandler<any>, // get, set 方法
+  collectionHandlers: ProxyHandler<any>, // 列表类型的 get, set
+  proxyMap: WeakMap<Target, any> // 存储已创建响应式的对象
 ) {
   if (!isObject(target)) {
     if (__DEV__) {

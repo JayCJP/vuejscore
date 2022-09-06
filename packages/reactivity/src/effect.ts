@@ -51,8 +51,8 @@ export const ITERATE_KEY = Symbol(__DEV__ ? 'iterate' : '')
 export const MAP_KEY_ITERATE_KEY = Symbol(__DEV__ ? 'Map key iterate' : '')
 
 export class ReactiveEffect<T = any> {
-  active = true
-  deps: Dep[] = []
+  active = true // 当前是否需要采集依赖
+  deps: Dep[] = [] // 依赖队列
   parent: ReactiveEffect | undefined = undefined
 
   /**
@@ -61,6 +61,7 @@ export class ReactiveEffect<T = any> {
    */
   computed?: ComputedRefImpl<T>
   /**
+   * 是否允许嵌套
    * @internal
    */
   allowRecurse?: boolean
@@ -76,14 +77,16 @@ export class ReactiveEffect<T = any> {
   onTrigger?: (event: DebuggerEvent) => void
 
   constructor(
-    public fn: () => T,
-    public scheduler: EffectScheduler | null = null,
+    public fn: () => T, // 响应回调
+    public scheduler: EffectScheduler | null = null, // 控制触发响应的调度器
     scope?: EffectScope
   ) {
     recordEffectScope(this, scope)
   }
 
+  // 执行effect 回调
   run() {
+    // 非激活状态 无需采集回调里的依赖
     if (!this.active) {
       return this.fn()
     }
@@ -98,6 +101,7 @@ export class ReactiveEffect<T = any> {
     try {
       this.parent = activeEffect
       activeEffect = this
+      // 控制回调里 ref reactive 触发get时 是否需要收集当前的 effect
       shouldTrack = true
 
       trackOpBit = 1 << ++effectTrackDepth
@@ -107,6 +111,7 @@ export class ReactiveEffect<T = any> {
       } else {
         cleanupEffect(this)
       }
+      // 执行监听响应的回调
       return this.fn()
     } finally {
       if (effectTrackDepth <= maxMarkerBits) {
@@ -167,6 +172,7 @@ export interface ReactiveEffectRunner<T = any> {
   effect: ReactiveEffect
 }
 
+// 创建一个 effect
 export function effect<T = any>(
   fn: () => T,
   options?: ReactiveEffectOptions

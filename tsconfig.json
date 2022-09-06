@@ -16,7 +16,7 @@
     "removeComments": false,
     "jsx": "preserve",
     "lib": ["esnext", "dom"],
-    "types": ["jest", "puppeteer", "node"],
+    "types": ["jest", "puppeteer", "node", "mocha"],
     "rootDir": ".",
     "paths": {
       "@vue/compat": ["packages/vue-compat/src"],

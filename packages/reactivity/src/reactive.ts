@@ -211,7 +211,7 @@ function createReactiveObject(
   }
   const proxy = new Proxy(
     target,
-    targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers
+    targetType === TargetType.COLLECTION ? collectionHandlers : baseHandlers // 对普通引用类型 和 集合/字典类型做兼容处理
   )
   proxyMap.set(target, proxy)
   return proxy

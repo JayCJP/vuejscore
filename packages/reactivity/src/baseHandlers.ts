@@ -60,6 +60,7 @@ function createArrayInstrumentations() {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
       const arr = toRaw(this) as any
       for (let i = 0, l = this.length; i < l; i++) {
+        // 当在effect 回调中操作响应式数组时需要采集依赖
         track(arr, TrackOpTypes.GET, i + '')
       }
       // we run the method using the original args first (which may be reactive)
@@ -76,6 +77,7 @@ function createArrayInstrumentations() {
   // which leads to infinite loops in some cases (#2137)
   ;(['push', 'pop', 'shift', 'unshift', 'splice'] as const).forEach(key => {
     instrumentations[key] = function (this: unknown[], ...args: unknown[]) {
+      // 当以上操作时会更新 length 属性，通过 暂停采集避免 length 属性收集依赖
       pauseTracking()
       const res = (toRaw(this) as any)[key].apply(this, args)
       resetTracking()

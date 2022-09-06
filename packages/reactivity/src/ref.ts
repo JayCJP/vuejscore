@@ -36,6 +36,7 @@ type RefBase<T> = {
   value: T
 }
 
+// 采集正在执行的 effect 依赖
 export function trackRefValue(ref: RefBase<any>) {
   if (shouldTrack && activeEffect) {
     ref = toRaw(ref)
@@ -46,11 +47,12 @@ export function trackRefValue(ref: RefBase<any>) {
         key: 'value'
       })
     } else {
+      // 传入 ref 的依赖收集队列，将正在执行的 effect 传入，收集起来
       trackEffects(ref.dep || (ref.dep = createDep()))
     }
   }
 }
-
+// 触发 ref 收集到的依赖
 export function triggerRefValue(ref: RefBase<any>, newVal?: any) {
   ref = toRaw(ref)
   if (ref.dep) {
@@ -62,6 +64,7 @@ export function triggerRefValue(ref: RefBase<any>, newVal?: any) {
         newValue: newVal
       })
     } else {
+      // 触发依赖响应，将ref 收集到的依赖一个一个取出来执行
       triggerEffects(ref.dep)
     }
   }
@@ -102,8 +105,8 @@ function createRef(rawValue: unknown, shallow: boolean) {
 }
 
 class RefImpl<T> {
-  private _value: T
-  private _rawValue: T
+  private _value: T // 更新后的value
+  private _rawValue: T // 响应式前旧的value
 
   public dep?: Dep = undefined
   public readonly __v_isRef = true
@@ -113,23 +116,31 @@ class RefImpl<T> {
     this._value = __v_isShallow ? value : toReactive(value)
   }
 
+  // xx.value 获取ref的值
   get value() {
+    // 触发采集依赖
+    // 看看谁 get 了我，如果是effect则需要采集
     trackRefValue(this)
+    // 返回当前的value
     return this._value
   }
 
+  // xx.value = 1 更新ref 的值
   set value(newVal) {
     const useDirectValue =
       this.__v_isShallow || isShallow(newVal) || isReadonly(newVal)
     newVal = useDirectValue ? newVal : toRaw(newVal)
+    // 比较更新前后是否有更改
     if (hasChanged(newVal, this._rawValue)) {
       this._rawValue = newVal
       this._value = useDirectValue ? newVal : toReactive(newVal)
+      // ref的值被更改 触发依赖
       triggerRefValue(this, newVal)
     }
   }
 }
 
+// 外部自动触发 ref 依赖
 export function triggerRef(ref: Ref) {
   triggerRefValue(ref, __DEV__ ? ref.value : void 0)
 }

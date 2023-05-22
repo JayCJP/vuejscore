@@ -15,10 +15,12 @@ import { ComputedRefImpl } from './computed'
 // Conceptually, it's easier to think of a dependency as a Dep class
 // which maintains a Set of subscribers, but we simply store them as
 // raw Sets to reduce memory overhead.
+// 翻译为中文 => 存储{target -> key -> dep}连接的主要WeakMap。从概念上讲，更容易将依赖性视为维护订阅者集合的Dep类，但我们只是将它们存储为原始集合，以减少内存开销。
 type KeyToDepMap = Map<any, Dep>
 const targetMap = new WeakMap<any, KeyToDepMap>()
 
 // The number of effects currently being tracked recursively.
+// 翻译为中文 => 当前正在递归跟踪的effect数量。
 let effectTrackDepth = 0
 
 export let trackOpBit = 1
@@ -28,6 +30,7 @@ export let trackOpBit = 1
  * This value is chosen to enable modern JS engines to use a SMI on all platforms.
  * When recursion depth is greater, fall back to using a full cleanup.
  */
+// 翻译为中文 => 位跟踪标记最多支持30级递归。选择此值是为了使现代JS引擎在所有平台上都能使用SMI。当递归深度更大时，回退到使用完整的清理。
 const maxMarkerBits = 30
 
 export type EffectScheduler = (...args: any[]) => any
@@ -132,6 +135,7 @@ export class ReactiveEffect<T = any> {
 
   stop() {
     // stopped while running itself - defer the cleanup
+    // 翻译为中文 => 在运行自身时停止-延迟清理
     if (activeEffect === this) {
       this.deferStop = true
     } else if (this.active) {

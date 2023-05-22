@@ -14,33 +14,36 @@ import { DebuggerEvent, pauseTracking, resetTracking } from '@vue/reactivity'
 
 export { onActivated, onDeactivated } from './components/KeepAlive'
 
-export function injectHook(
-  type: LifecycleHooks,
-  hook: Function & { __weh?: Function },
-  target: ComponentInternalInstance | null = currentInstance,
-  prepend: boolean = false
+export function injectHook( // 注入钩子
+  type: LifecycleHooks, // 生命周期钩子
+  hook: Function & { __weh?: Function }, // 钩子函数
+  target: ComponentInternalInstance | null = currentInstance, // 组件实例
+  prepend: boolean = false // 是否在前面插入
 ): Function | undefined {
   if (target) {
     const hooks = target[type] || (target[type] = [])
     // cache the error handling wrapper for injected hooks so the same hook
     // can be properly deduped by the scheduler. "__weh" stands for "with error
     // handling".
+    // 翻译为中文 => 为注入的钩子缓存错误处理包装器，以便调度程序可以正确地对钩子进行去重。 “__weh”代表“带错误处理”。
     const wrappedHook =
       hook.__weh ||
       (hook.__weh = (...args: unknown[]) => {
-        if (target.isUnmounted) {
+        if (target.isUnmounted) { // 组件是否已经卸载
           return
         }
         // disable tracking inside all lifecycle hooks
         // since they can potentially be called inside effects.
+        // 翻译为中文 => 在所有的生命周期钩子中禁用追踪，因为它们可能会在effect中调用。 
         pauseTracking()
         // Set currentInstance during hook invocation.
         // This assumes the hook does not synchronously trigger other hooks, which
         // can only be false when the user does something really funky.
-        setCurrentInstance(target)
-        const res = callWithAsyncErrorHandling(hook, target, type, args)
-        unsetCurrentInstance()
-        resetTracking()
+        // 翻译为中文 => 在钩子调用期间设置currentInstance。这假设钩子不会同步触发其他钩子，除非用户做了一些非常有趣的事情。
+        setCurrentInstance(target) // 设置当前组件实例
+        const res = callWithAsyncErrorHandling(hook, target, type, args) // 调用钩子函数
+        unsetCurrentInstance() // 重置当前组件实例
+        resetTracking() // 重置追踪
         return res
       })
     if (prepend) {
@@ -63,10 +66,11 @@ export function injectHook(
   }
 }
 
-export const createHook =
+export const createHook = // 创建钩子
   <T extends Function = () => any>(lifecycle: LifecycleHooks) =>
   (hook: T, target: ComponentInternalInstance | null = currentInstance) =>
     // post-create lifecycle registrations are noops during SSR (except for serverPrefetch)
+    // 翻译为中文 => SSR期间，后创建的生命周期注册是无操作的（除了serverPrefetch）
     (!isInSSRComponentSetup || lifecycle === LifecycleHooks.SERVER_PREFETCH) &&
     injectHook(lifecycle, hook, target)
 

@@ -255,6 +255,7 @@ export interface ComponentInternalInstance {
   /**
    * Tracking reactive effects (e.g. watchers) associated with this component
    * so that they can be automatically stopped on component unmount
+   * 翻译为中文 => 跟踪与此组件关联的effects（例如watchers），以便可以在组件卸载时自动停止它们
    * @internal
    */
   scope: EffectScope
